@@ -1,0 +1,6 @@
+{
+  "name": "FLASHBACK | Fotografía & Dirección Visual",
+  "description": "Página web oficial de FLASHBACK (@flashback.dos). Fotografía editorial, retratos y sesiones creativas en República Dominicana.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
