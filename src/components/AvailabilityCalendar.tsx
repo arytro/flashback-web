@@ -209,7 +209,7 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
       }
 
       // Record in shared data store
-      const newBooking = submitBookingRequest({
+      const newBooking = await submitBookingRequest({
         clientName: clientName.trim(),
         clientEmail: clientEmail.trim(),
         clientPhone: clientPhone.trim(),

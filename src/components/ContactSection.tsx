@@ -45,7 +45,7 @@ export const ContactSection: React.FC = () => {
       }
     }
 
-    submitBookingRequest({
+    await submitBookingRequest({
       clientName: formData.nombre,
       clientEmail: formData.email,
       clientPhone: formData.whatsapp,

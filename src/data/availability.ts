@@ -582,9 +582,9 @@ export function saveBookingRequests(bookings: BookingRequest[]): BookingRequest[
   return bookings;
 }
 
-export function submitBookingRequest(
+export async function submitBookingRequest(
   request: Omit<BookingRequest, 'id' | 'createdAt' | 'status'>
-): BookingRequest {
+): Promise<BookingRequest> {
   const current = getBookingRequests();
   const newBooking: BookingRequest = {
     ...request,
@@ -595,7 +595,10 @@ export function submitBookingRequest(
 
   const updated = [newBooking, ...current];
   saveBookingRequests(updated);
-  pushUpsert(SUPABASE_TABLES.BOOKINGS, { id: newBooking.id, data: newBooking });
+  // Esperamos a que la escritura llegue a Supabase ANTES de continuar,
+  // para que una navegación inmediata (ej. abrir WhatsApp en el celular)
+  // no corte la petición a mitad de camino.
+  await pushUpsert(SUPABASE_TABLES.BOOKINGS, { id: newBooking.id, data: newBooking });
   return newBooking;
 }
 
