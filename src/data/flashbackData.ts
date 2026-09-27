@@ -29,7 +29,7 @@ export const FLASHBACK_CONFIG: FlashbackConfig = {
     'En FLASHBACK entendemos la fotografía como una intersección entre la autenticidad del sujeto y la composición cinematográfica. Nos alejamos de los posados rígidos y los clichés para buscar imágenes con tensión visual, carácter y pureza estética.',
     'Cada sesión es un espacio colaborativo donde la luz, las sombras y los contrastes narran una historia única. Trabajamos con una mirada monocromática y editorial que privilegia lo honesto sobre lo artificial.',
   ],
-  formspreeEndpoint: '',
+  formspreeEndpoint: 'https://formspree.io/f/maeneqoy',
   weeklySchedule: DEFAULT_WEEKLY_SCHEDULE,
 };
 
