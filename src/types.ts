@@ -69,6 +69,7 @@ export interface FlashbackConfig {
   logoUrl?: string;
   instagramHandle: string;
   instagramUrl: string;
+  tiktokUrl: string;
   whatsappNumber: string;
   whatsappDisplay: string;
   email: string;

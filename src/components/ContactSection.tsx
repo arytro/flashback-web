@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { getFlashbackConfig, submitBookingRequest, buildFlashbackWhatsAppUrl, getSessionsList } from '../data/availability';
 import { FlashbackConfig, SessionDetail } from '../types';
-import { MessageCircle, Instagram, Mail, Send, CheckCircle2, ArrowUpRight } from 'lucide-react';
+import { MessageCircle, Instagram, Send, CheckCircle2, ArrowUpRight } from 'lucide-react';
+
+const TikTokIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+    <path d="M16.6 5.82c-1-.94-1.6-2.24-1.6-3.7h-3.14v13.4a2.6 2.6 0 1 1-2.6-2.6c.24 0 .48.03.7.09V9.75a5.72 5.72 0 0 0-.7-.05A5.75 5.75 0 1 0 15 15.42V9.1a7.3 7.3 0 0 0 4.4 1.47V7.44a4.85 4.85 0 0 1-2.8-1.62Z" />
+  </svg>
+);
 
 export const ContactSection: React.FC = () => {
   const [config, setConfig] = useState<FlashbackConfig>(getFlashbackConfig());
@@ -142,22 +148,24 @@ export const ContactSection: React.FC = () => {
               </div>
             </a>
 
-            {/* Email */}
+            {/* TikTok */}
             <a
-              href={`mailto:${config.email}`}
+              href={config.tiktokUrl}
+              target="_blank"
+              rel="noopener noreferrer"
               className="p-5 border border-white/10 bg-zinc-950 hover:border-white transition-all group block"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3.5">
                   <div className="p-2.5 bg-black border border-white/10 text-white">
-                    <Mail className="w-5 h-5" />
+                    <TikTokIcon className="w-5 h-5" />
                   </div>
                   <div>
                     <span className="text-xs uppercase tracking-[0.18em] text-white font-sans-clean block font-medium">
-                      Correo Electrónico
+                      TikTok
                     </span>
                     <span className="text-xs text-zinc-400 font-mono block mt-0.5">
-                      {config.email}
+                      @flashback8140
                     </span>
                   </div>
                 </div>

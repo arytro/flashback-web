@@ -24,7 +24,7 @@ export const AdminBusinessInfo: React.FC = () => {
   const [instagramUrl, setInstagramUrl] = useState(config.instagramUrl);
   const [whatsappNumber, setWhatsappNumber] = useState(config.whatsappNumber);
   const [whatsappDisplay, setWhatsappDisplay] = useState(config.whatsappDisplay);
-  const [email, setEmail] = useState(config.email);
+  const [tiktokUrl, setTiktokUrl] = useState(config.tiktokUrl || '');
   const [location, setLocation] = useState(config.location);
   const [heroHeadline, setHeroHeadline] = useState(config.heroHeadline);
   const [heroSubheadline, setHeroSubheadline] = useState(config.heroSubheadline);
@@ -56,7 +56,7 @@ export const AdminBusinessInfo: React.FC = () => {
       instagramUrl: instagramUrl.trim(),
       whatsappNumber: whatsappNumber.replace(/\D/g, ''),
       whatsappDisplay: whatsappDisplay.trim(),
-      email: email.trim(),
+      tiktokUrl: tiktokUrl.trim(),
       location: location.trim(),
       heroHeadline: heroHeadline.trim(),
       heroSubheadline: heroSubheadline.trim(),
@@ -146,26 +146,14 @@ export const AdminBusinessInfo: React.FC = () => {
                 className="w-full bg-zinc-800 border border-zinc-700 px-3.5 py-2.5 text-xs text-white rounded-lg focus:outline-none focus:border-white"
               />
             </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase mb-1.5">
-                Correo Electrónico Oficial
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-zinc-800 border border-zinc-700 px-3.5 py-2.5 text-xs text-white rounded-lg focus:outline-none focus:border-white"
-              />
-            </div>
-          </div>
+        </div>
         </div>
 
         {/* Social & WhatsApp Channels */}
         <div className="bg-zinc-900 border border-zinc-800 p-6 sm:p-8 rounded-xl shadow space-y-6">
           <h2 className="text-base font-bold text-white flex items-center space-x-2">
             <Instagram className="w-4 h-4 text-zinc-400" />
-            <span>Canales Directos (WhatsApp & Instagram)</span>
+            <span>Canales Directos (WhatsApp, Instagram & TikTok)</span>
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -192,6 +180,19 @@ export const AdminBusinessInfo: React.FC = () => {
                 className="w-full bg-zinc-800 border border-zinc-700 px-3.5 py-2.5 text-xs text-white rounded-lg focus:outline-none focus:border-white"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-zinc-300 uppercase mb-1.5">
+              URL de TikTok
+            </label>
+            <input
+              type="url"
+              placeholder="https://www.tiktok.com/@usuario"
+              value={tiktokUrl}
+              onChange={(e) => setTiktokUrl(e.target.value)}
+              className="w-full bg-zinc-800 border border-zinc-700 px-3.5 py-2.5 text-xs text-white rounded-lg focus:outline-none focus:border-white"
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">

@@ -41,12 +41,21 @@ export const Header: React.FC = () => {
     >
       <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between">
         {/* Brand Logo & Instagram Tag */}
-        <a href="#hero" className="group flex flex-col focus:outline-none">
-          <span className="font-editorial text-2xl md:text-3xl tracking-[0.3em] font-medium text-white group-hover:text-zinc-300 transition-colors uppercase">
-            {config.name}
-          </span>
-          <span className="text-[10px] uppercase tracking-[0.35em] text-zinc-400 font-sans-clean font-light -mt-0.5">
-            {config.instagramHandle}
+        <a href="#hero" className="group flex items-center space-x-3 focus:outline-none">
+          {config.logoUrl && (
+            <img
+              src={config.logoUrl}
+              alt={config.name}
+              className="h-9 w-9 md:h-11 md:w-11 object-contain shrink-0"
+            />
+          )}
+          <span className="flex flex-col">
+            <span className="font-editorial text-2xl md:text-3xl tracking-[0.3em] font-medium text-white group-hover:text-zinc-300 transition-colors uppercase">
+              {config.name}
+            </span>
+            <span className="text-[10px] uppercase tracking-[0.35em] text-zinc-400 font-sans-clean font-light -mt-0.5">
+              {config.instagramHandle}
+            </span>
           </span>
         </a>
 
