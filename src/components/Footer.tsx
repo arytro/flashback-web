@@ -38,6 +38,22 @@ export const Footer: React.FC = () => {
                 <Instagram className="w-3.5 h-3.5" />
                 <span>{config.instagramHandle}</span>
               </a>
+              {config.tiktokUrl && (
+                <>
+                  <span className="text-zinc-600">·</span>
+                  <a
+                    href={config.tiktokUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-white hover:text-zinc-300 flex items-center space-x-1"
+                  >
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5" aria-hidden="true">
+                      <path d="M16.6 5.82c-1-.94-1.6-2.24-1.6-3.7h-3.14v13.4a2.6 2.6 0 1 1-2.6-2.6c.24 0 .48.03.7.09V9.75a5.72 5.72 0 0 0-.7-.05A5.75 5.75 0 1 0 15 15.42V9.1a7.3 7.3 0 0 0 4.4 1.47V7.44a4.85 4.85 0 0 1-2.8-1.62Z" />
+                    </svg>
+                    <span>TikTok</span>
+                  </a>
+                </>
+              )}
             </div>
             <p className="text-xs text-zinc-500 font-light mt-2 max-w-sm">
               {config.location}
@@ -49,7 +65,6 @@ export const Footer: React.FC = () => {
             <a href="#sesiones" className="hover:text-white transition-colors">Sesiones</a>
             <a href="#sobre-flashback" className="hover:text-white transition-colors">Sobre Flashback</a>
             <a href="#disponibilidad" className="hover:text-white transition-colors">Disponibilidad</a>
-            <a href="#contacto" className="hover:text-white transition-colors">Contacto</a>
             <button
               onClick={scrollToTop}
               className="p-2 border border-white/15 text-white hover:border-white transition-colors"

@@ -8,7 +8,6 @@ import { SessionsSection } from './components/SessionsSection';
 import { AboutSection } from './components/AboutSection';
 import { ExperienceTimeline } from './components/ExperienceTimeline';
 import { AvailabilityCalendar } from './components/AvailabilityCalendar';
-import { ContactSection } from './components/ContactSection';
 import { Footer } from './components/Footer';
 import { ProposalBadge } from './components/ProposalBadge';
 import { AdminLayout } from './admin/AdminLayout';
@@ -75,8 +74,7 @@ function AppContent() {
           3. Sesiones (Sesiones personales, Retratos, Sesiones al aire libre, Sesiones creativas)
           4. Sobre Flashback (Presentación artística del proyecto)
           5. El Proceso (Flujo de trabajo creativo de 4 pasos)
-          6. Disponibilidad (Calendario interactivo, horarios, solicitud de reserva y WhatsApp)
-          7. Contacto (Canales directos, Instagram @flashback.dos y Formspree) */}
+          6. Disponibilidad (Calendario interactivo, horarios, solicitud de reserva y WhatsApp) */}
       <main className="flex-grow">
         <Hero />
         <PortfolioSection />
@@ -84,7 +82,6 @@ function AppContent() {
         <AboutSection />
         <ExperienceTimeline />
         <AvailabilityCalendar preselectedSession={selectedSession} />
-        <ContactSection />
       </main>
 
       {/* Footer with small discreet link to /admin */}

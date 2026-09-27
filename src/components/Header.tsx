@@ -27,7 +27,6 @@ export const Header: React.FC = () => {
     { label: 'Sesiones', href: '#sesiones' },
     { label: 'Sobre Flashback', href: '#sobre-flashback' },
     { label: 'Disponibilidad', href: '#disponibilidad' },
-    { label: 'Contacto', href: '#contacto' },
   ];
 
   return (
