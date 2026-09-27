@@ -15,6 +15,19 @@ import {
   INITIAL_BOOKINGS,
   DEFAULT_WEEKLY_SCHEDULE,
 } from './flashbackData';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
+
+// Supabase table names — mirror 1:1 with STORAGE_KEYS below
+const SUPABASE_TABLES = {
+  CONFIG: 'flashback_config',
+  SESSIONS: 'flashback_sessions',
+  PORTFOLIO: 'flashback_portfolio',
+  BOOKINGS: 'flashback_bookings',
+  SCHEDULE: 'flashback_schedule',
+  AVAILABILITY: 'flashback_availability',
+};
+
+const SCHEDULE_ORDER = [1, 2, 3, 4, 5, 6, 0];
 
 // Local storage keys - Architecture prepared for 1:1 replacement with Supabase tables
 export const STORAGE_KEYS = {
@@ -42,6 +55,139 @@ export const notifyStoreUpdated = () => {
     window.dispatchEvent(new CustomEvent('flashback_data_updated'));
   }
 };
+
+/**
+ * ----------------------------------------------------
+ * SUPABASE SYNC LAYER
+ * localStorage sigue siendo la fuente de lectura inmediata (rápida,
+ * sin parpadeos), pero cada escritura se replica a Supabase en segundo
+ * plano y los cambios remotos (desde otro dispositivo) se traen vía
+ * Realtime y se vuelcan sobre localStorage automáticamente.
+ * ----------------------------------------------------
+ */
+async function pushUpsert(table: string, row: Record<string, unknown>) {
+  if (!isSupabaseConfigured()) return;
+  try {
+    const { error } = await supabase.from(table).upsert(row);
+    if (error) console.error(`[Supabase] Error guardando en ${table}:`, error.message);
+  } catch (e) {
+    console.error(`[Supabase] Error guardando en ${table}:`, e);
+  }
+}
+
+async function pushDelete(table: string, column: string, value: string) {
+  if (!isSupabaseConfigured()) return;
+  try {
+    const { error } = await supabase.from(table).delete().eq(column, value);
+    if (error) console.error(`[Supabase] Error eliminando de ${table}:`, error.message);
+  } catch (e) {
+    console.error(`[Supabase] Error eliminando de ${table}:`, e);
+  }
+}
+
+async function fetchDataColumn<T>(table: string): Promise<T[]> {
+  if (!isSupabaseConfigured()) return [];
+  try {
+    const { data, error } = await supabase.from(table).select('data');
+    if (error) {
+      console.error(`[Supabase] Error leyendo ${table}:`, error.message);
+      return [];
+    }
+    return (data || []).map((row: { data: T }) => row.data);
+  } catch (e) {
+    console.error(`[Supabase] Error leyendo ${table}:`, e);
+    return [];
+  }
+}
+
+let isSyncing = false;
+
+/**
+ * Trae el estado más reciente de Supabase y lo vuelca sobre localStorage,
+ * notificando a todos los componentes montados para que se re-rendericen.
+ */
+export async function refreshFromSupabase(): Promise<void> {
+  if (typeof window === 'undefined' || !isSupabaseConfigured() || isSyncing) return;
+  isSyncing = true;
+  try {
+    const [configRows, sessions, portfolio, bookings, schedule, availabilityRows] = await Promise.all([
+      fetchDataColumn<FlashbackConfig>(SUPABASE_TABLES.CONFIG),
+      fetchDataColumn<SessionDetail>(SUPABASE_TABLES.SESSIONS),
+      fetchDataColumn<PortfolioItem>(SUPABASE_TABLES.PORTFOLIO),
+      fetchDataColumn<BookingRequest>(SUPABASE_TABLES.BOOKINGS),
+      fetchDataColumn<DaySchedule>(SUPABASE_TABLES.SCHEDULE),
+      fetchDataColumn<DayAvailability>(SUPABASE_TABLES.AVAILABILITY),
+    ]);
+
+    if (configRows.length) {
+      localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(configRows[0]));
+    }
+    if (sessions.length) {
+      localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sessions));
+    }
+    if (portfolio.length) {
+      localStorage.setItem(STORAGE_KEYS.PORTFOLIO, JSON.stringify(portfolio));
+    }
+    if (bookings.length) {
+      localStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(bookings));
+    }
+    if (schedule.length) {
+      const sorted = [...schedule].sort(
+        (a, b) => SCHEDULE_ORDER.indexOf(a.dayOfWeek) - SCHEDULE_ORDER.indexOf(b.dayOfWeek)
+      );
+      localStorage.setItem(STORAGE_KEYS.SCHEDULE, JSON.stringify(sorted));
+    }
+    if (availabilityRows.length) {
+      const existing = (() => {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEYS.AVAILABILITY);
+          return raw ? JSON.parse(raw) : {};
+        } catch {
+          return {};
+        }
+      })();
+      const map: Record<string, DayAvailability> = { ...existing };
+      availabilityRows.forEach((day) => {
+        map[day.date] = day;
+      });
+      localStorage.setItem(STORAGE_KEYS.AVAILABILITY, JSON.stringify(map));
+    }
+
+    notifyStoreUpdated();
+  } finally {
+    isSyncing = false;
+  }
+}
+
+let realtimeInitialized = false;
+
+function setupRealtimeSync() {
+  if (typeof window === 'undefined' || !isSupabaseConfigured() || realtimeInitialized) return;
+  realtimeInitialized = true;
+
+  try {
+    const tables = Object.values(SUPABASE_TABLES);
+    let channel = supabase.channel('flashback-sync');
+    tables.forEach((table) => {
+      channel = channel.on(
+        'postgres_changes' as any,
+        { event: '*', schema: 'public', table },
+        () => {
+          refreshFromSupabase();
+        }
+      );
+    });
+    channel.subscribe();
+  } catch (e) {
+    console.error('[Supabase] No se pudo iniciar la sincronización en tiempo real:', e);
+  }
+}
+
+// Arranca la sincronización apenas se carga la app (una sola vez)
+if (typeof window !== 'undefined') {
+  refreshFromSupabase();
+  setupRealtimeSync();
+}
 
 /**
  * Initial calendar seeding
@@ -178,6 +324,7 @@ export function setDateStatus(
   } catch (e) {
     console.error('Failed to save date status', e);
   }
+  pushUpsert(SUPABASE_TABLES.AVAILABILITY, { date: dateStr, data: updatedDay });
 
   return updatedDay;
 }
@@ -223,6 +370,7 @@ export function setSlotStatus(
   } catch (e) {
     console.error('Failed to save slot status', e);
   }
+  pushUpsert(SUPABASE_TABLES.AVAILABILITY, { date: dateStr, data: updatedDay });
 
   return updatedDay;
 }
@@ -252,6 +400,7 @@ export function saveFlashbackConfig(partial: Partial<FlashbackConfig>): Flashbac
   } catch (e) {
     console.error('Failed to save config', e);
   }
+  pushUpsert(SUPABASE_TABLES.CONFIG, { id: 1, data: updated });
   return updated;
 }
 
@@ -278,6 +427,9 @@ export function saveWeeklySchedule(schedule: DaySchedule[]): DaySchedule[] {
   } catch (e) {
     console.error('Failed to save weekly schedule', e);
   }
+  schedule.forEach((day) => {
+    pushUpsert(SUPABASE_TABLES.SCHEDULE, { day_of_week: day.dayOfWeek, data: day });
+  });
   return schedule;
 }
 
@@ -318,6 +470,7 @@ export function createSession(newSession: Omit<SessionDetail, 'id'>): SessionDet
     active: true,
   };
   saveSessionsList([...list, session]);
+  pushUpsert(SUPABASE_TABLES.SESSIONS, { id: session.id, data: session });
   return session;
 }
 
@@ -328,6 +481,7 @@ export function updateSession(id: string, partial: Partial<SessionDetail>): Sess
 
   list[index] = { ...list[index], ...partial };
   saveSessionsList(list);
+  pushUpsert(SUPABASE_TABLES.SESSIONS, { id, data: list[index] });
   return list[index];
 }
 
@@ -335,6 +489,7 @@ export function deleteSession(id: string): boolean {
   const list = getSessionsList();
   const filtered = list.filter((s) => s.id !== id);
   saveSessionsList(filtered);
+  pushDelete(SUPABASE_TABLES.SESSIONS, 'id', id);
   return true;
 }
 
@@ -375,6 +530,7 @@ export function createPortfolioItem(newItem: Omit<PortfolioItem, 'id'>): Portfol
     active: true,
   };
   savePortfolioList([item, ...list]);
+  pushUpsert(SUPABASE_TABLES.PORTFOLIO, { id: item.id, data: item });
   return item;
 }
 
@@ -385,6 +541,7 @@ export function updatePortfolioItem(id: string, partial: Partial<PortfolioItem>)
 
   list[index] = { ...list[index], ...partial };
   savePortfolioList(list);
+  pushUpsert(SUPABASE_TABLES.PORTFOLIO, { id, data: list[index] });
   return list[index];
 }
 
@@ -392,6 +549,7 @@ export function deletePortfolioItem(id: string): boolean {
   const list = getPortfolioList();
   const filtered = list.filter((p) => p.id !== id);
   savePortfolioList(filtered);
+  pushDelete(SUPABASE_TABLES.PORTFOLIO, 'id', id);
   return true;
 }
 
@@ -437,6 +595,7 @@ export function submitBookingRequest(
 
   const updated = [newBooking, ...current];
   saveBookingRequests(updated);
+  pushUpsert(SUPABASE_TABLES.BOOKINGS, { id: newBooking.id, data: newBooking });
   return newBooking;
 }
 
@@ -452,6 +611,7 @@ export function updateBookingStatus(id: string, status: BookingStatus): BookingR
   const prevBooking = list[index];
   list[index] = { ...prevBooking, status };
   saveBookingRequests(list);
+  pushUpsert(SUPABASE_TABLES.BOOKINGS, { id, data: list[index] });
 
   // If confirmed, automatically occupy that slot on the public calendar!
   if (status === 'confirmada' && prevBooking.selectedDate && prevBooking.selectedTime) {

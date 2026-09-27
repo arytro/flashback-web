@@ -7,7 +7,6 @@ import {
   ChevronRight,
   Send,
   MessageCircle,
-  SlidersHorizontal,
   Lock,
 } from 'lucide-react';
 import {
@@ -16,7 +15,6 @@ import {
   setDateStatus,
   setSlotStatus,
   getFlashbackConfig,
-  saveFlashbackConfig,
   getSessionsList,
   submitBookingRequest,
   buildFlashbackWhatsAppUrl,
@@ -61,10 +59,6 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
   const [availabilityStore, setAvailabilityStore] = useState<Record<string, DayAvailability>>(
     getStoredAvailability()
   );
-
-  // Admin Simulator state for testing shared database sync
-  const [showAdminTool, setShowAdminTool] = useState(false);
-  const [adminPhoneInput, setAdminPhoneInput] = useState('');
 
   // Sync if preselectedSession changes from parent
   useEffect(() => {
@@ -255,32 +249,6 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
       customNote: clientMessage,
     });
   }, [selectedSession, selectedDateStr, selectedTimeSlot, clientName, clientMessage]);
-
-  // Admin simulation actions
-  const handleToggleBlockDate = () => {
-    if (!selectedDateStr) return;
-    const nextStatus = currentDayInfo.status === 'blocked' ? 'available' : 'blocked';
-    setDateStatus(selectedDateStr, nextStatus);
-  };
-
-  const handleToggleSlot = (time: string) => {
-    if (!selectedDateStr) return;
-    const slot = currentDayInfo.slots.find((s) => s.time === time);
-    if (!slot) return;
-    const nextStatus = slot.status === 'available' ? 'booked' : 'available';
-    setSlotStatus(selectedDateStr, time, nextStatus);
-  };
-
-  const handleUpdateAdminPhone = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (adminPhoneInput.trim()) {
-      saveFlashbackConfig({
-        whatsappNumber: adminPhoneInput.replace(/\D/g, ''),
-        whatsappDisplay: adminPhoneInput.trim(),
-      });
-      alert('Número de WhatsApp de Flashback actualizado.');
-    }
-  };
 
   return (
     <section
@@ -527,74 +495,6 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
                 </div>
               </div>
 
-              {/* Discrete Simulator Toggle for Admin sync testing */}
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAdminTool(!showAdminTool)}
-                  className="w-full text-center py-2 text-[11px] text-zinc-500 hover:text-white flex items-center justify-center space-x-1.5 transition-colors font-sans-clean"
-                >
-                  <SlidersHorizontal className="w-3 h-3" />
-                  <span>
-                    {showAdminTool
-                      ? 'Ocultar Simulador de Sincronización'
-                      : 'Simular Panel Administrativo (Probar Bloqueo en Vivo)'}
-                  </span>
-                </button>
-
-                {showAdminTool && (
-                  <div className="mt-3 p-4 bg-black border border-white/20 text-xs space-y-3 animate-fade-in">
-                    <div className="flex items-center justify-between text-zinc-300">
-                      <span className="font-semibold uppercase tracking-wider text-[10px]">
-                        Conexión Base de Datos Compartida
-                      </span>
-                      <span className="text-[10px] text-zinc-500">Panel &lt;-&gt; Web</span>
-                    </div>
-                    <p className="text-[11px] text-zinc-400 leading-relaxed font-light">
-                      Simula cómo el fotógrafo desde el panel administrativo bloquea/habilita fechas y horarios en la base de datos compartida:
-                    </p>
-
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      <button
-                        type="button"
-                        onClick={handleToggleBlockDate}
-                        className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white text-[11px] border border-white/20 font-medium"
-                      >
-                        {currentDayInfo.status === 'blocked'
-                          ? `Habilitar (${selectedDateStr})`
-                          : `Bloquear (${selectedDateStr})`}
-                      </button>
-
-                      {currentDayInfo.slots.map((s) => (
-                        <button
-                          key={s.id}
-                          type="button"
-                          onClick={() => handleToggleSlot(s.time)}
-                          className="px-2 py-1 bg-zinc-900 hover:bg-zinc-800 text-[10px] text-zinc-300 border border-white/10"
-                        >
-                          {s.time}: {s.status === 'available' ? 'Bloquear' : 'Liberar'}
-                        </button>
-                      ))}
-                    </div>
-
-                    <form onSubmit={handleUpdateAdminPhone} className="pt-2 border-t border-white/10 flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="Editar WhatsApp (+1 809...)"
-                        value={adminPhoneInput}
-                        onChange={(e) => setAdminPhoneInput(e.target.value)}
-                        className="bg-zinc-900 border border-white/10 px-2 py-1 text-[11px] text-white flex-grow focus:outline-none focus:border-white"
-                      />
-                      <button
-                        type="submit"
-                        className="px-3 py-1 bg-white text-black font-bold text-[10px] uppercase tracking-wider"
-                      >
-                        Guardar
-                      </button>
-                    </form>
-                  </div>
-                )}
-              </div>
             </div>
 
             {/* Right: Booking Request Form & Direct WhatsApp Channel */}
