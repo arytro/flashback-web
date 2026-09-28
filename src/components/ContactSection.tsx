@@ -236,6 +236,7 @@ export const ContactSection: React.FC = () => {
                     </label>
                     <input
                       type="email"
+                      required
                       placeholder="correo@ejemplo.com"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
