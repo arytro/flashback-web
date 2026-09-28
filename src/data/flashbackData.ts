@@ -16,7 +16,7 @@ export const FLASHBACK_CONFIG: FlashbackConfig = {
   logoUrl: '/images/brand/logo-white.png',
   instagramHandle: '@flashback.dos',
   instagramUrl: 'https://www.instagram.com/flashback.dos/',
-  tiktokUrl: 'https://www.tiktok.com/@flashback8140?_r=1&_t=ZS-9A5TtbMySIQ',
+  tiktokUrl: 'https://www.tiktok.com/@flashbackdos2',
   whatsappNumber: '18494554992',
   whatsappDisplay: '+1 (849) 455-4992',
   email: 'contacto@flashback.dos',
