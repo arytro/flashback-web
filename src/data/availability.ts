@@ -677,3 +677,4 @@ export function buildFlashbackWhatsAppUrl(params: {
   const cleanPhone = config.whatsappNumber.replace(/\D/g, '');
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
 }
+ 
