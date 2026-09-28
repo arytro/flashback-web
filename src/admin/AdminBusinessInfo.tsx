@@ -202,7 +202,7 @@ export const AdminBusinessInfo: React.FC = () => {
               </label>
               <input
                 type="text"
-                placeholder="18494554992"
+                placeholder="18090000000"
                 value={whatsappNumber}
                 onChange={(e) => setWhatsappNumber(e.target.value)}
                 className="w-full bg-zinc-800 border border-zinc-700 px-3.5 py-2.5 text-xs text-white rounded-lg font-mono focus:outline-none focus:border-white"
@@ -218,7 +218,7 @@ export const AdminBusinessInfo: React.FC = () => {
               </label>
               <input
                 type="text"
-                placeholder="+1 (849) 455 4992"
+                placeholder="+1 (809) 000-0000"
                 value={whatsappDisplay}
                 onChange={(e) => setWhatsappDisplay(e.target.value)}
                 className="w-full bg-zinc-800 border border-zinc-700 px-3.5 py-2.5 text-xs text-white rounded-lg focus:outline-none focus:border-white"

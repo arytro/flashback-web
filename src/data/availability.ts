@@ -75,6 +75,17 @@ async function pushUpsert(table: string, row: Record<string, unknown>) {
   }
 }
 
+async function pushInsert(table: string, row: Record<string, unknown>) {
+  if (!isSupabaseConfigured()) return;
+  try {
+    // INSERT simple (sin upsert): los visitantes anónimos solo tienen permiso de insertar
+    const { error } = await supabase.from(table).insert(row);
+    if (error) console.error(`[Supabase] Error insertando en ${table}:`, error.message);
+  } catch (e) {
+    console.error(`[Supabase] Error insertando en ${table}:`, e);
+  }
+}
+
 async function pushDelete(table: string, column: string, value: string) {
   if (!isSupabaseConfigured()) return;
   try {
@@ -598,7 +609,7 @@ export async function submitBookingRequest(
   // Esperamos a que la escritura llegue a Supabase ANTES de continuar,
   // para que una navegación inmediata (ej. abrir WhatsApp en el celular)
   // no corte la petición a mitad de camino.
-  await pushUpsert(SUPABASE_TABLES.BOOKINGS, { id: newBooking.id, data: newBooking });
+  await pushInsert(SUPABASE_TABLES.BOOKINGS, { id: newBooking.id, data: newBooking });
   return newBooking;
 }
 
@@ -677,4 +688,3 @@ export function buildFlashbackWhatsAppUrl(params: {
   const cleanPhone = config.whatsappNumber.replace(/\D/g, '');
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
 }
- 
