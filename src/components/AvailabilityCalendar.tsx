@@ -590,7 +590,6 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
                   </label>
                   <input
                     type="email"
-                    required
                     placeholder="correo@ejemplo.com"
                     value={clientEmail}
                     onChange={(e) => setClientEmail(e.target.value)}
