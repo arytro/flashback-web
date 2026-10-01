@@ -253,7 +253,7 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
   return (
     <section
       id="disponibilidad"
-      className="relative w-full bg-black text-white py-24 md:py-32 px-6 md:px-12 border-t border-white/10"
+      className="relative w-full bg-black text-white py-16 md:py-24 px-6 md:px-12 border-t border-white/10"
     >
       <div className="max-w-7xl mx-auto">
         {/* Section Header */}

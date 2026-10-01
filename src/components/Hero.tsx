@@ -25,7 +25,7 @@ export const Hero: React.FC = () => {
   return (
     <section
       id="hero"
-      className="relative w-full min-h-screen flex items-center justify-center overflow-hidden bg-black"
+      className="relative w-full min-h-[70vh] flex items-center justify-center overflow-hidden bg-black"
     >
       {/* Background High-Contrast Monochrome Slideshow */}
       <div className="absolute inset-0 z-0">

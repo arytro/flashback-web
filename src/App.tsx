@@ -70,18 +70,18 @@ function AppContent() {
 
       {/* Main Content Flow:
           1. Hero (Fuerza visual, FLASHBACK, frase corta, CTAs)
-          2. Portafolio (Protagonista visual con categorías Retratos, Sesiones, Exterior, Editorial)
-          3. Sesiones (Sesiones personales, Retratos, Sesiones al aire libre, Sesiones creativas)
-          4. Sobre Flashback (Presentación artística del proyecto)
-          5. El Proceso (Flujo de trabajo creativo de 4 pasos)
-          6. Disponibilidad (Calendario interactivo, horarios, solicitud de reserva y WhatsApp) */}
+          2. Disponibilidad (Calendario interactivo, horarios, solicitud de reserva y WhatsApp)
+          3. Portafolio (Protagonista visual con categorías Retratos, Sesiones, Exterior, Editorial)
+          4. Sesiones (Sesiones personales, Retratos, Sesiones al aire libre, Sesiones creativas)
+          5. Sobre Flashback (Presentación artística del proyecto)
+          6. El Proceso (Flujo de trabajo creativo de 4 pasos) */}
       <main className="flex-grow">
         <Hero />
+        <AvailabilityCalendar preselectedSession={selectedSession} />
         <PortfolioSection />
         <SessionsSection onSelectSession={handleSelectSessionFromCard} />
         <AboutSection />
         <ExperienceTimeline />
-        <AvailabilityCalendar preselectedSession={selectedSession} />
       </main>
 
       {/* Footer with small discreet link to /admin */}
