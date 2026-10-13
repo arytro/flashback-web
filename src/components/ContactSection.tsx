@@ -304,6 +304,7 @@ export const ContactSection: React.FC = () => {
                       <option value="12:00 PM">12:00 PM (Mediodía)</option>
                       <option value="03:00 PM">03:00 PM (Tarde)</option>
                       <option value="05:00 PM">05:00 PM (Atardecer)</option>
+                      <option value="06:00 PM - 10:00 PM">06:00 PM - 10:00 PM (Noche)</option>
                     </select>
                   </div>
                 </div>

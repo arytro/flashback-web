@@ -39,13 +39,63 @@ export const STORAGE_KEYS = {
   SCHEDULE: 'flashback_schedule_v2',
 };
 
+// Horario fijo nocturno (6 a 10 PM). Se usa como clave para vincular admin, calendario público y reservas.
+export const EVENING_SLOT_TIME = '06:00 PM - 10:00 PM';
+
 // Standard slot template for any working day
 export const DEFAULT_DAILY_TIME_SLOTS: Omit<TimeSlot, 'id'>[] = [
   { time: '10:00 AM', label: 'Mañana / Luz Difusa', status: 'available' },
   { time: '12:00 PM', label: 'Mediodía / Alto Contraste', status: 'available' },
   { time: '03:00 PM', label: 'Tarde / Luz Natural', status: 'available' },
   { time: '05:00 PM', label: 'Atardecer / Golden Hour', status: 'available' },
+  { time: EVENING_SLOT_TIME, label: 'Noche / Sesión Nocturna', status: 'available' },
 ];
+
+/**
+ * Garantiza que cualquier día (incluidos los que ya estaban guardados en
+ * localStorage / Supabase antes de existir el horario nocturno) tenga el
+ * horario fijo de 6 a 10 PM, sin tocar el estado de los demás horarios.
+ * Se aplica al LEER, así el vínculo admin <-> calendario público se mantiene
+ * y los días antiguos se "autocorrigen" sin migraciones manuales.
+ */
+function withEveningSlot(day: DayAvailability): DayAvailability {
+  if (!day || !Array.isArray(day.slots)) return day;
+  const exists = day.slots.some(
+    (s) => s.time.toLowerCase() === EVENING_SLOT_TIME.toLowerCase()
+  );
+  if (exists) return day;
+
+  // Solo nace bloqueado si el admin bloqueó el día completo (todos los horarios bloqueados)
+  const adminBlockedDay =
+    day.status === 'blocked' &&
+    day.slots.length > 0 &&
+    day.slots.every((s) => s.status === 'blocked');
+
+  const eveningSlot: TimeSlot = {
+    id: `${day.date}-slot-evening`,
+    time: EVENING_SLOT_TIME,
+    label: 'Noche / Sesión Nocturna',
+    status: adminBlockedDay ? 'blocked' : 'available',
+  };
+
+  return {
+    ...day,
+    // Si el día figuraba "bloqueado" solo porque los 4 horarios estaban ocupados,
+    // ahora queda parcialmente reservado porque el nocturno sigue libre.
+    status: day.status === 'blocked' && !adminBlockedDay ? 'partially_booked' : day.status,
+    slots: [...day.slots, eveningSlot],
+  };
+}
+
+function withEveningSlotInStore(
+  store: Record<string, DayAvailability>
+): Record<string, DayAvailability> {
+  const out: Record<string, DayAvailability> = {};
+  Object.keys(store).forEach((k) => {
+    out[k] = withEveningSlot(store[k]);
+  });
+  return out;
+}
 
 /**
  * Dispatch reactive change events so public & admin components update in real-time
@@ -96,18 +146,19 @@ async function pushDelete(table: string, column: string, value: string) {
   }
 }
 
-async function fetchDataColumn<T>(table: string): Promise<T[]> {
-  if (!isSupabaseConfigured()) return [];
+// Devuelve null cuando la lectura FALLA (para no confundir un error con "no hay datos")
+async function fetchDataColumn<T>(table: string): Promise<T[] | null> {
+  if (!isSupabaseConfigured()) return null;
   try {
     const { data, error } = await supabase.from(table).select('data');
     if (error) {
       console.error(`[Supabase] Error leyendo ${table}:`, error.message);
-      return [];
+      return null;
     }
     return (data || []).map((row: { data: T }) => row.data);
   } catch (e) {
     console.error(`[Supabase] Error leyendo ${table}:`, e);
-    return [];
+    return null;
   }
 }
 
@@ -121,7 +172,7 @@ export async function refreshFromSupabase(): Promise<void> {
   if (typeof window === 'undefined' || !isSupabaseConfigured() || isSyncing) return;
   isSyncing = true;
   try {
-    const [configRows, sessions, portfolio, bookings, schedule, availabilityRows] = await Promise.all([
+    const [configRowsRaw, sessionsRaw, portfolioRaw, bookingsRaw, scheduleRaw, availabilityRowsRaw] = await Promise.all([
       fetchDataColumn<FlashbackConfig>(SUPABASE_TABLES.CONFIG),
       fetchDataColumn<SessionDetail>(SUPABASE_TABLES.SESSIONS),
       fetchDataColumn<PortfolioItem>(SUPABASE_TABLES.PORTFOLIO),
@@ -129,6 +180,14 @@ export async function refreshFromSupabase(): Promise<void> {
       fetchDataColumn<DaySchedule>(SUPABASE_TABLES.SCHEDULE),
       fetchDataColumn<DayAvailability>(SUPABASE_TABLES.AVAILABILITY),
     ]);
+
+    const configRows = configRowsRaw || [];
+    const sessions = sessionsRaw || [];
+    const portfolio = portfolioRaw || [];
+    const bookings = bookingsRaw || [];
+    const bookingsLoaded = bookingsRaw !== null;
+    const schedule = scheduleRaw || [];
+    const availabilityRows = availabilityRowsRaw || [];
 
     if (configRows.length) {
       localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(configRows[0]));
@@ -139,7 +198,9 @@ export async function refreshFromSupabase(): Promise<void> {
     if (portfolio.length) {
       localStorage.setItem(STORAGE_KEYS.PORTFOLIO, JSON.stringify(portfolio));
     }
-    if (bookings.length) {
+    if (bookingsLoaded) {
+      // Se aplica aunque la lista quede vacía, para que borrar la última solicitud
+      // también se refleje en los demás dispositivos.
       localStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(bookings));
     }
     if (schedule.length) {
@@ -283,7 +344,7 @@ export function getStoredAvailability(): Record<string, DayAvailability> {
       localStorage.setItem(STORAGE_KEYS.AVAILABILITY, JSON.stringify(initial));
       return initial;
     }
-    return JSON.parse(raw);
+    return withEveningSlotInStore(JSON.parse(raw));
   } catch (e) {
     console.error('Error reading availability from storage', e);
     return getInitialCalendarState();
@@ -611,6 +672,42 @@ export async function submitBookingRequest(
   // no corte la petición a mitad de camino.
   await pushInsert(SUPABASE_TABLES.BOOKINGS, { id: newBooking.id, data: newBooking });
   return newBooking;
+}
+
+/**
+ * ¿La solicitud ya pasó? Compara con la fecha LOCAL de hoy (no UTC),
+ * así una cita de hoy nunca se considera pasada. Las fechas "por coordinar" no cuentan.
+ */
+export function isPastBooking(booking: BookingRequest): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(booking.selectedDate || '')) return false;
+  const now = new Date();
+  const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(
+    now.getDate()
+  ).padStart(2, '0')}`;
+  return booking.selectedDate < todayLocal;
+}
+
+/**
+ * Elimina una solicitud que ya pasó (local + Supabase).
+ * No toca la disponibilidad del calendario: la fecha ya es pasada.
+ */
+export function deleteBookingRequest(id: string): boolean {
+  const list = getBookingRequests();
+  const target = list.find((b) => b.id === id);
+  if (!target || !isPastBooking(target)) return false;
+  saveBookingRequests(list.filter((b) => b.id !== id));
+  pushDelete(SUPABASE_TABLES.BOOKINGS, 'id', id);
+  return true;
+}
+
+/** Elimina de una vez todas las solicitudes cuya fecha ya pasó. Devuelve cuántas borró. */
+export function deletePastBookingRequests(): number {
+  const list = getBookingRequests();
+  const past = list.filter(isPastBooking);
+  if (past.length === 0) return 0;
+  saveBookingRequests(list.filter((b) => !isPastBooking(b)));
+  past.forEach((b) => pushDelete(SUPABASE_TABLES.BOOKINGS, 'id', b.id));
+  return past.length;
 }
 
 /**

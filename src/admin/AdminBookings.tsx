@@ -12,10 +12,14 @@ import {
   User,
   Mail,
   Phone,
+  Trash2,
 } from 'lucide-react';
 import {
   getBookingRequests,
   updateBookingStatus,
+  isPastBooking,
+  deleteBookingRequest,
+  deletePastBookingRequests,
 } from '../data/availability';
 import { BookingRequest, BookingStatus } from '../types';
 
@@ -43,6 +47,26 @@ export const AdminBookings: React.FC = () => {
         ? `¡Reserva de ${clientName} confirmada! La fecha y horario se han marcado como ocupados en la página pública.`
         : `Solicitud de ${clientName} marcada como ${newStatus}.`
     );
+  };
+
+  const pastCount = bookings.filter(isPastBooking).length;
+
+  const handleDeleteOne = (id: string, clientName: string) => {
+    if (!window.confirm(`¿Eliminar definitivamente la solicitud de ${clientName}? Esta acción no se puede deshacer.`)) return;
+    if (deleteBookingRequest(id)) {
+      showToast(`Solicitud de ${clientName} eliminada.`);
+    }
+  };
+
+  const handleDeleteAllPast = () => {
+    if (
+      !window.confirm(
+        `¿Eliminar definitivamente las ${pastCount} solicitudes cuya fecha ya pasó? Esta acción no se puede deshacer.`
+      )
+    )
+      return;
+    const removed = deletePastBookingRequests();
+    showToast(`${removed} solicitud${removed === 1 ? '' : 'es'} pasada${removed === 1 ? '' : 's'} eliminada${removed === 1 ? '' : 's'}.`);
   };
 
   const filteredBookings = bookings.filter((b) => {
@@ -77,8 +101,18 @@ export const AdminBookings: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center space-x-2 text-xs text-zinc-400">
+        <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-400">
           <span>Total: <strong className="text-white">{bookings.length}</strong> solicitudes</span>
+          {pastCount > 0 && (
+            <button
+              type="button"
+              onClick={handleDeleteAllPast}
+              className="px-3 py-1.5 bg-red-950/60 hover:bg-red-900 text-red-300 border border-red-900/60 rounded-lg font-semibold transition-colors flex items-center space-x-1.5"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Eliminar pasadas ({pastCount})</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -160,6 +194,12 @@ export const AdminBookings: React.FC = () => {
                       {b.status}
                     </span>
 
+                    {isPastBooking(b) && (
+                      <span className="text-[10px] uppercase font-bold px-2.5 py-0.5 rounded-full bg-zinc-800 text-zinc-400 border border-zinc-700">
+                        Fecha pasada
+                      </span>
+                    )}
+
                     <span className="text-xs text-zinc-500">
                       ID: {b.id}
                     </span>
@@ -209,6 +249,17 @@ export const AdminBookings: React.FC = () => {
                     <MessageCircle className="w-4 h-4" />
                     <span>WhatsApp</span>
                   </a>
+
+                  {isPastBooking(b) && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteOne(b.id, b.clientName)}
+                      className="px-3 py-1.5 bg-zinc-800 hover:bg-red-950 text-zinc-400 hover:text-red-400 text-xs rounded-lg border border-zinc-700 transition-colors flex items-center justify-center space-x-1.5"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Eliminar</span>
+                    </button>
+                  )}
 
                   {b.status === 'pendiente' && (
                     <>
